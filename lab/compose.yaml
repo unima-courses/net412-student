@@ -1,0 +1,31 @@
+services:
+  victim:
+    build: .
+    image: net412-l2:local
+    command: ["sleep", "infinity"]
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, NET_RAW]
+    networks:
+      lab: {ipv4_address: 10.77.12.10}
+  service:
+    image: net412-l2:local
+    command: ["python", "/opt/lab/service.py"]
+    cap_drop: [ALL]
+    cap_add: [NET_RAW]
+    networks:
+      lab: {ipv4_address: 10.77.12.20}
+  attacker:
+    image: net412-l2:local
+    command: ["sleep", "infinity"]
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, NET_RAW]
+    sysctls:
+      net.ipv4.ip_forward: "1"
+      net.ipv4.conf.all.send_redirects: "0"
+    networks:
+      lab: {ipv4_address: 10.77.12.30}
+networks:
+  lab:
+    internal: true
+    ipam:
+      config: [{subnet: 10.77.12.0/24}]

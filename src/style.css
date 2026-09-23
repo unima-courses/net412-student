@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@plugin "daisyui" { themes: corporate --default, dark --prefersdark; }
+@import "@xterm/xterm/css/xterm.css";
+:root { font-family: system-ui, sans-serif; }
+body { min-width: 360px; }
+.terminal-frame { height: 360px; min-height: 280px; padding: 12px; border-radius: 0.75rem; background: #111827; }
+.terminal-frame .xterm { height: 100%; }
+.log { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 230px; overflow: auto; }
+:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }

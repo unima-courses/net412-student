@@ -118,7 +118,7 @@ app.addEventListener('click', async event => {
     else if (action === 'sync') { const result = await api('sync', 'POST', {}); state.pending = result.pending; state.pendingErrors = result.errors || []; notify(`${result.pending} item(s) still pending.${state.pendingErrors.length ? ' Check the sync errors below.' : ''}`); }
     else if (['start', 'reset', 'baseline', 'poison', 'harden'].includes(action)) {
       state.message = `${action[0].toUpperCase()}${action.slice(1)} in progress…`; render();
-      const result = await api(`lab/${state.spec.environment.client_pack}/${action}`, 'POST', {});
+      const result = await api(`lab/${state.spec.environment.client_pack}/${action}`, 'POST', { task_id: state.task });
       if (action === 'start') state.running = true;
       if (action === 'reset') state.running = false;
       state.evidence = result.evidence;

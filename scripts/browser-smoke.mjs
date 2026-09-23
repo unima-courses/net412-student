@@ -3,18 +3,23 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { createArpLab } from '../src/labs/l2-arp.js';
 
 const username = process.env.NET412_BROWSER_USER;
 const password = process.env.NET412_BROWSER_PASSWORD;
 if (!username || !password) throw new Error('Set NET412_BROWSER_USER and NET412_BROWSER_PASSWORD for a test account');
 const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'net412-chrome-'));
+const lab = createArpLab(path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'lab'));
+assert.equal((await lab.status()).running, false, 'An existing NET412 lab is running; do not interrupt it');
 const chrome = spawn(process.env.CHROME_BIN || 'google-chrome', [
   '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
   '--remote-debugging-port=9223', `--user-data-dir=${profile}`, 'http://127.0.0.1:4174'
 ], { stdio: 'ignore' });
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let ws;
+let started = false;
 try {
   let target;
   for (let i = 0; i < 30; i++) {
@@ -56,14 +61,35 @@ try {
   assert.ok(page.includes('ARP poisoning, path changes and hardening'));
   assert.ok(page.includes('/work/poison_student.py'));
   assert.ok(page.includes('Start lab'));
+  await evaluate("document.querySelector('[data-action=start]').click()");
+  started = true;
+  for (let i = 0; i < 40; i++) {
+    if ((await evaluate('document.body.innerText')).includes('Running')) break;
+    await sleep(500);
+  }
+  assert.ok((await evaluate('document.body.innerText')).includes('Running'), 'Lab did not start');
+  await evaluate("document.querySelector('[data-action=baseline]').click()");
+  for (let i = 0; i < 40; i++) {
+    if ((await evaluate('document.body.innerText')).includes('lladdr')) break;
+    await sleep(500);
+  }
+  assert.ok((await evaluate('document.body.innerText')).includes('lladdr'), 'Baseline neighbour evidence missing');
   await evaluate("document.querySelector('[data-task=\"l2.b\"]').click()");
   await sleep(300);
   assert.ok((await evaluate('document.body.innerText')).includes('Supplied ICMP comparison'));
   await command('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
   const screenshot = await command('Page.captureScreenshot', { format: 'png' });
   await fs.writeFile('/tmp/net412-workbook.png', Buffer.from(screenshot.data, 'base64'));
-  console.log('Browser login, activity navigation, and workbook rendering passed');
+  await evaluate("document.querySelector('[data-action=reset]').click()");
+  for (let i = 0; i < 40; i++) {
+    if ((await evaluate('document.body.innerText')).includes('Stopped')) break;
+    await sleep(500);
+  }
+  assert.ok((await evaluate('document.body.innerText')).includes('Stopped'), 'Lab did not reset');
+  started = false;
+  console.log('Browser login, activity navigation, lab controls, and workbook rendering passed');
 } finally {
+  if (started) await lab.reset();
   ws?.close();
   chrome.kill();
   await sleep(250);

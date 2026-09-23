@@ -23,6 +23,7 @@ export function createArpLab(labDir) {
   }
   return {
     id: 'l2-arp',
+    taskIds: new Set(['l2.a', 'l2.b']),
     terminalTargets: containers,
     containerName: name,
     async status() {

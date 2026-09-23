@@ -132,11 +132,13 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
     }
     state.drafts[req.labSession.username] = evidence;
     await saveState();
-    if (action === 'start' || action === 'reset') {
-      const event = { id: randomUUID(), activity_id: lab.id, task_id: 'l2.a', kind: action === 'start' ? 'started' : 'reset', payload: {} };
-      try { await remote('events/', req.labSession.token, 'POST', event); }
-      catch { state.pending.push({ endpoint: 'events/', payload: event, username: req.labSession.username }); await saveState(); }
-    }
+    const taskId = lab.taskIds.has(req.body.task_id) ? req.body.task_id : 'l2.a';
+    const payload = { action, service_ok: result.service_before ?? result.service_after ?? result.service_hardened ?? null,
+      capture_seen: result.attacker_http_seen ?? null, source_test_passed: result.source_test_passed ?? null };
+    const event = { id: randomUUID(), activity_id: lab.id, task_id: taskId,
+      kind: action === 'start' ? 'started' : action === 'reset' ? 'reset' : 'checkpoint', payload };
+    try { await remote('events/', req.labSession.token, 'POST', event); }
+    catch { state.pending.push({ endpoint: 'events/', payload: event, username: req.labSession.username }); await saveState(); }
     res.json({ ...result, evidence });
   }));
   app.get('/api/lab/:pack/pcap', auth, wrap(async (req, res) => {

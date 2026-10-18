@@ -238,8 +238,11 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
   }));
   app.use(express.static(path.join(root, 'web-dist')));
   app.get('*path', (req, res) => res.sendFile(path.join(root, 'web-dist', 'index.html')));
-  const server = await new Promise(resolve => {
-    const instance = app.listen(port, '127.0.0.1', () => resolve(instance));
+  const server = await new Promise((resolve, reject) => {
+    const instance = app.listen(port, '127.0.0.1', error => {
+      if (error) reject(error);
+      else resolve(instance);
+    });
   });
   const wss = new WebSocketServer({ noServer: true });
   server.on('upgrade', async (request, socket, head) => {
@@ -294,5 +297,13 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const port = Number(process.env.NET412_PORT || 4174);
-  startServer({ port }).then(server => console.log(`Open NET412 Lab in your browser: http://127.0.0.1:${server.address().port}`));
+  startServer({ port })
+    .then(server => console.log(`Open NET412 Lab in your browser: http://127.0.0.1:${server.address().port}`))
+    .catch(error => {
+      const message = error.code === 'EADDRINUSE'
+        ? `Port ${port} is already in use. Close the other NET412 client or set NET412_PORT to another available port.`
+        : error.message;
+      console.error(`Unable to start NET412 Lab: ${message}`);
+      process.exitCode = 1;
+    });
 }

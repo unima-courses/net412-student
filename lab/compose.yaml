@@ -1,27 +1,33 @@
 services:
-  victim:
+  host_a:
     build: .
-    image: net412-l2:local
+    image: ${COMPOSE_PROJECT_NAME}-node:local
+    pull_policy: never
     command: ["sleep", "infinity"]
+    environment: {REQUEST_PART: "REQUEST_FRAGMENT"}
     cap_drop: [ALL]
     cap_add: [NET_ADMIN, NET_RAW]
     networks:
       lab: {ipv4_address: 10.77.12.10}
-  service:
-    image: net412-l2:local
+  server_1:
+    image: ${COMPOSE_PROJECT_NAME}-node:local
+    pull_policy: never
     command: ["python", "/opt/lab/service.py"]
+    environment: {RESPONSE_PART: "RESPONSE_FRAGMENT"}
     cap_drop: [ALL]
     cap_add: [NET_RAW]
     networks:
       lab: {ipv4_address: 10.77.12.20}
-  attacker:
-    image: net412-l2:local
+  host_b:
+    image: ${COMPOSE_PROJECT_NAME}-node:local
+    pull_policy: never
     command: ["sleep", "infinity"]
     cap_drop: [ALL]
     cap_add: [NET_ADMIN, NET_RAW]
     sysctls:
       net.ipv4.ip_forward: "1"
       net.ipv4.conf.all.send_redirects: "0"
+      net.ipv4.conf.default.send_redirects: "0"
     networks:
       lab: {ipv4_address: 10.77.12.30}
 networks:

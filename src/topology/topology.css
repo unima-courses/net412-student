@@ -1,0 +1,56 @@
+/* Teaching theme v1: reusable switched-segment diagrams; no external assets. */
+.topology-diagram{container-type:inline-size;display:block;margin:1.2rem 0 0;padding:1rem;border:1px solid var(--lab-rule);border-radius:10px;background:var(--lab-surface)}
+.topology-diagram figcaption{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;margin-bottom:1rem}
+.topology-diagram figcaption>span{color:var(--lab-maroon);font-weight:700;font-size:1.1rem}
+.topology-diagram figcaption small{font-size:.72rem;color:var(--lab-muted)}
+.topology-segment+.topology-segment{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--lab-rule)}
+.topology-scroll{overflow:auto;position:relative;padding:.25rem .2rem .3rem;scrollbar-width:thin}
+.topology-stage{display:flex;flex-direction:column;min-width:var(--topology-min-width);isolation:isolate}
+.topology-row{display:grid;grid-template-columns:repeat(var(--device-count),minmax(0,1fr));gap:18px}
+.topology-slot{position:relative;display:flex;justify-content:center;min-width:0;padding-bottom:26px}
+.topology-row--bottom .topology-slot{padding-bottom:0;padding-top:26px}
+.topology-slot::after{content:'';position:absolute;width:2px;height:26px;left:calc(50% - 1px);bottom:0;background:var(--lab-rule)}
+.topology-row--bottom .topology-slot::after{top:0;bottom:auto}
+.topology-port{position:absolute;width:6px;height:6px;border-radius:2px;left:calc(50% - 3px);bottom:-3px;background:var(--lab-rule-strong);z-index:2}
+.topology-row--bottom .topology-port{top:-3px;bottom:auto}
+.topology-card{box-sizing:border-box;width:100%;max-width:216px;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:.75rem .65rem .8rem;border:1px solid var(--lab-rule);border-radius:11px;background:var(--lab-surface);box-shadow:0 2px 5px #00000004}
+.topology-card--emphasis{border:2px solid var(--lab-maroon);padding:calc(.75rem - 1px) calc(.65rem - 1px) calc(.8rem - 1px)}
+.topology-icon{width:34px;height:34px;color:var(--lab-maroon);flex-shrink:0;margin-bottom:.3rem}
+.topology-card[data-kind=server]>.topology-icon{color:var(--lab-focus)}
+.topology-card h3{font:700 1.05rem var(--lab-serif);color:var(--lab-ink);margin:0;overflow-wrap:anywhere}
+.topology-address,.topology-mac{font-family:var(--lab-mono);font-size:.75rem;margin-top:.2rem;overflow-wrap:anywhere}
+.topology-address{color:var(--lab-maroon)}.topology-mac{color:var(--lab-muted);font-size:.68rem}
+.topology-role{font-size:.73rem;line-height:1.35;color:var(--lab-muted);margin:.35rem 0 0;max-width:23ch}
+.topology-memberships{font-size:.65rem;color:var(--lab-muted);margin-top:.4rem;overflow-wrap:anywhere}
+.topology-switch{position:relative;display:flex;align-items:center;gap:.65rem;justify-content:center;min-height:48px;padding:.6rem .9rem;margin:0 6px;background:linear-gradient(120deg,#38292d,#241e21);color:#fbf5ec;border:1px solid #302126;border-radius:9px;box-shadow:0 3px 8px #20101b1a}
+.topology-switch>.topology-icon{color:#e3cbd0;width:26px;height:26px;margin:0}
+.topology-switch>div{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:.7rem;row-gap:.1rem;min-width:0}
+.topology-switch strong{font-size:.82rem;font-weight:700;overflow-wrap:anywhere}
+.topology-switch code{font: .76rem var(--lab-mono);color:#ddc8cb;overflow-wrap:anywhere}
+.topology-lan-label{font:.59rem var(--lab-mono);letter-spacing:.1em;color:#cbb1b8;padding:.1rem .3rem;border:1px solid #70515b;border-radius:3px}
+.topology-empty{font-size:.85rem;color:var(--lab-muted);margin:.5rem 0}
+.topology-unconnected{border-top:1px solid var(--lab-rule);margin-top:1rem;padding-top:1rem}.topology-unconnected>h3{font-size:.9rem;color:var(--lab-muted);margin-bottom:.7rem}.topology-unconnected>div{display:flex;flex-wrap:wrap;gap:1rem}
+@container(max-width:380px){
+ .topology-diagram figcaption{align-items:flex-start;flex-direction:column;gap:.2rem}
+ .topology-stage{min-width:0}
+ .topology-switch{order:0;margin:0;justify-content:flex-start;padding:.65rem .7rem}
+ .topology-switch>div{justify-content:flex-start}
+ .topology-lan-label{display:none}
+ .topology-switch::after{content:'';position:absolute;left:12px;top:100%;height:14px;width:2px;background:var(--lab-rule)}
+ .topology-row{grid-template-columns:minmax(0,1fr);gap:0;order:1}
+ .topology-row--bottom{order:2}
+ .topology-slot,.topology-row--bottom .topology-slot{padding:14px 0 0 28px;justify-content:flex-start}
+ .topology-slot::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--lab-rule)}
+ .topology-slot:last-child::before{bottom:calc(50% - 7px)}
+ .has-bottom .topology-row--top .topology-slot:last-child::before{bottom:0}
+ .topology-slot::after,.topology-row--bottom .topology-slot::after{left:12px;top:calc(50% + 7px);bottom:auto;width:16px;height:2px;background:var(--lab-rule)}
+ .topology-port{display:none}
+ .topology-card,.topology-card--emphasis{max-width:none;display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:.7rem;justify-items:start;text-align:left;padding:.7rem .8rem}
+ .topology-card>.topology-icon{grid-column:1;grid-row:1 / span 4;align-self:center;margin:0}
+ .topology-card>h3,.topology-card>code,.topology-card>p,.topology-card>small{grid-column:2}
+ .topology-role{max-width:none}
+}
+@media(prefers-reduced-motion:reduce){.topology-scroll{scroll-behavior:auto}}
+
+.topology-scroll-hint{font-size:.7rem;color:var(--lab-muted);margin:0 0 .65rem}
+@container(max-width:380px){.topology-scroll-hint{display:none}}

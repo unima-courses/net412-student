@@ -14,7 +14,7 @@ Start here:
 You need:
 
 - A 64-bit computer running a supported Windows release or Debian/Ubuntu with a graphical desktop. On Windows, check [Docker Desktop's current system requirements](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements), including hardware virtualization and WSL 2 support.
-- At least 8 GB RAM; 16 GB is recommended. Allow approximately 50 GB of free disk space for Docker, images and saved work.
+- At least 8 GB RAM; 16 GB is recommended. Allow approximately **10-20 GB** of free disk space for Docker, images and saved work.
 - Permission to install software. You may need an administrator or lab technician for the initial setup.
 - Docker with the Compose plugin, Node.js **24 LTS** with npm, Wireshark, and a current browser. An existing supported Node.js 22 installation must be version 22.12 or newer.
 - The client download link and instructor server URL supplied by your instructor, plus your registered email address and registration number.

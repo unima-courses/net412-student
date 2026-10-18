@@ -8,7 +8,8 @@ const app = document.querySelector('#app');
 const state = { user: null, passwordChangeRequired: false, activities: [], spec: null, task: 'l2.a', evidence: {}, running: false,
   target: null, sessions: new Map(), activeSession: null, sessionCounts: {}, summary: { tasks: [] }, drafts: {}, message: '', downloading: false, progress: [], pending: 0, pendingErrors: [] };
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
-const theme = localStorage.getItem('net412-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'corporate');
+let theme = 'corporate';
+try { if (localStorage.getItem('net412-theme') === 'dark') theme = 'dark'; } catch { /* use the default when storage is unavailable */ }
 document.documentElement.dataset.theme = theme;
 
 async function api(url, method = 'GET', payload) {
@@ -226,7 +227,7 @@ app.addEventListener('click', async event => {
     else if (action === 'new-terminal') openTerminal();
     else if (opened) { state.spec = await api(`activities/${opened.dataset.open}`); state.task = state.spec.tasks[0].id; state.target = state.spec.environment.terminal_targets?.[0] || null; state.running = (await api(`lab/${state.spec.environment.client_pack}/status`)).running; state.message = ''; render(); }
     else if (task) { state.task = task.dataset.task; render(); }
-    else if (action === 'theme') { const next = document.documentElement.dataset.theme === 'dark' ? 'corporate' : 'dark'; document.documentElement.dataset.theme = next; localStorage.setItem('net412-theme', next); }
+    else if (action === 'theme') { const next = document.documentElement.dataset.theme === 'dark' ? 'corporate' : 'dark'; document.documentElement.dataset.theme = next; try { localStorage.setItem('net412-theme', next); } catch { /* keep the selection for this visit */ } }
     else if (action === 'back') { state.spec = null; await refresh(); }
     else if (action === 'logout') { closeTerminals(); state.drafts = {}; await api('logout', 'POST', {}); state.user = null; state.spec = null; render(); }
     else if (action === 'sync') { const result = await api('sync', 'POST', {}); await refresh(); state.pending = result.pending; state.pendingErrors = result.errors || []; notify(`${result.pending} item(s) still pending.${state.pendingErrors.length ? ' Check the sync errors below.' : ''}`); }

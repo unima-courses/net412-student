@@ -9,7 +9,7 @@
 .topology-row{display:grid;grid-template-columns:repeat(var(--device-count),minmax(0,1fr));gap:18px}
 .topology-slot{position:relative;display:flex;justify-content:center;min-width:0;padding-bottom:26px}
 .topology-row--bottom .topology-slot{padding-bottom:0;padding-top:26px}
-.topology-slot::after{content:'';position:absolute;width:2px;height:26px;left:calc(50% - 1px);bottom:0;background:var(--lab-rule)}
+.topology-slot::after{content:'';position:absolute;width:2px;height:26px;left:calc(50% - 1px);bottom:0;background:var(--lab-rule-strong)}
 .topology-row--bottom .topology-slot::after{top:0;bottom:auto}
 .topology-port{position:absolute;width:6px;height:6px;border-radius:2px;left:calc(50% - 3px);bottom:-3px;background:var(--lab-rule-strong);z-index:2}
 .topology-row--bottom .topology-port{top:-3px;bottom:auto}
@@ -36,14 +36,14 @@
  .topology-switch{order:0;margin:0;justify-content:flex-start;padding:.65rem .7rem}
  .topology-switch>div{justify-content:flex-start}
  .topology-lan-label{display:none}
- .topology-switch::after{content:'';position:absolute;left:12px;top:100%;height:14px;width:2px;background:var(--lab-rule)}
+ .topology-switch::after{content:'';position:absolute;left:12px;top:100%;height:14px;width:2px;background:var(--lab-rule-strong)}
  .topology-row{grid-template-columns:minmax(0,1fr);gap:0;order:1}
  .topology-row--bottom{order:2}
  .topology-slot,.topology-row--bottom .topology-slot{padding:14px 0 0 28px;justify-content:flex-start}
- .topology-slot::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--lab-rule)}
+ .topology-slot::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--lab-rule-strong)}
  .topology-slot:last-child::before{bottom:calc(50% - 7px)}
  .has-bottom .topology-row--top .topology-slot:last-child::before{bottom:0}
- .topology-slot::after,.topology-row--bottom .topology-slot::after{left:12px;top:calc(50% + 7px);bottom:auto;width:16px;height:2px;background:var(--lab-rule)}
+ .topology-slot::after,.topology-row--bottom .topology-slot::after{left:12px;top:calc(50% + 7px);bottom:auto;width:16px;height:2px;background:var(--lab-rule-strong)}
  .topology-port{display:none}
  .topology-card,.topology-card--emphasis{max-width:none;display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:.7rem;justify-items:start;text-align:left;padding:.7rem .8rem}
  .topology-card>.topology-icon{grid-column:1;grid-row:1 / span 4;align-self:center;margin:0}

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@plugin "daisyui" { themes: corporate --default, dark --prefersdark; }
+@plugin "daisyui" { themes: corporate --default, dark; }
 @import "@xterm/xterm/css/xterm.css";
 
 @font-face {
@@ -44,12 +44,25 @@
   --lab-rule-strong: #9c8f87;
   --lab-maroon: #641424;
   --lab-maroon-deep: #45101b;
+  --lab-on-accent: #ffffff;
+  --lab-accent-hover: #45101b;
   --lab-maroon-soft: #efe1e3;
   --lab-green: #176231;
   --lab-green-soft: #e5eee4;
   --lab-focus: #146f8a;
   --lab-serif: "Latin Modern Roman", Georgia, serif;
   --lab-mono: "Latin Modern Mono", "Courier New", monospace;
+  /* Keep component-library text, controls and icons on the course palette. */
+  --color-base-100: var(--lab-surface);
+  --color-base-200: var(--lab-paper);
+  --color-base-300: var(--lab-tint);
+  --color-base-content: var(--lab-ink);
+  --color-primary: var(--lab-maroon);
+  --color-primary-content: var(--lab-on-accent);
+  --color-neutral: var(--lab-tint);
+  --color-neutral-content: var(--lab-ink);
+  --color-success: var(--lab-green);
+  --color-success-content: var(--lab-surface);
   font-family: var(--lab-serif);
   color-scheme: light;
 }
@@ -58,14 +71,16 @@
   --lab-paper: #181616;
   --lab-surface: #211e1d;
   --lab-tint: #2a2624;
-  --lab-ink: #f0eae2;
-  --lab-muted: #bdb2aa;
-  --lab-rule: #4a423e;
-  --lab-rule-strong: #71645e;
-  --lab-maroon: #b95568;
+  --lab-ink: #faf4ee;
+  --lab-muted: #d3c7c1;
+  --lab-rule: #81716b;
+  --lab-rule-strong: #a3938b;
+  --lab-maroon: #f2a8b8;
+  --lab-on-accent: #29141c;
+  --lab-accent-hover: #ffc4d1;
   --lab-maroon-deep: #4b1723;
   --lab-maroon-soft: #382126;
-  --lab-green: #82bd8c;
+  --lab-green: #a1d9ad;
   --lab-green-soft: #213428;
   --lab-focus: #69c0d9;
   color-scheme: dark;
@@ -127,7 +142,8 @@ pre,
   letter-spacing: -.15em;
 }
 
-.navbar > .text-sm { color: rgb(255 250 244 / 74%) !important; }
+.navbar > .text-sm { color: rgb(255 250 244 / 88%) !important; }
+.navbar .badge { color: #f1dee3 !important; border-color: #b98d99 !important; }
 
 .max-w-7xl {
   width: min(100%, 1510px) !important;
@@ -183,10 +199,10 @@ h2,
 .btn-primary {
   border-color: var(--lab-maroon) !important;
   background: var(--lab-maroon) !important;
-  color: #fff !important;
+  color: var(--lab-on-accent) !important;
 }
 
-.btn-primary:hover { background: var(--lab-maroon-deep) !important; }
+.btn-primary:hover { background: var(--lab-accent-hover) !important; }
 
 .btn-outline,
 .btn-ghost {
@@ -215,7 +231,8 @@ h2,
 
 .btn-error { color: #8d2532 !important; }
 :root[data-theme="dark"] .btn-error { color: #df8290 !important; }
-.btn:disabled { opacity: .45; }
+.btn:disabled { opacity: 1; background: var(--lab-tint) !important; color: var(--lab-muted) !important; border-color: var(--lab-rule) !important; cursor: not-allowed; }
+.input::placeholder, .textarea::placeholder { color: var(--lab-muted); opacity: 1; }
 
 .input,
 .textarea,
@@ -286,7 +303,7 @@ h2,
 .tab-active {
   border-color: var(--lab-maroon) !important;
   background: var(--lab-maroon) !important;
-  color: #fff !important;
+  color: var(--lab-on-accent) !important;
 }
 
 .divider::before,
@@ -333,7 +350,7 @@ th {
   place-items: center;
   border-radius: 50%;
   background: var(--lab-maroon);
-  color: #fff;
+  color: var(--lab-on-accent);
   font: .7rem var(--lab-mono);
 }
 
@@ -467,7 +484,7 @@ th {
 .record-score small { font-size: 1.2rem; color: var(--lab-muted); font-weight: 400; }
 .record-score > span, .record-footnote, .record-footer { font-size: .8rem; color: var(--lab-muted); }
 .record-meter { margin: .35rem 0; font-size: .82rem; }
-.record-meter progress { width: 100%; height: .55rem; accent-color: var(--lab-maroon); border: 0; border-radius: 4px; overflow: hidden; appearance: none; background: var(--lab-tint); }
+.record-meter progress { width: 100%; height: .6rem; accent-color: var(--lab-maroon); border: 1px solid var(--lab-rule-strong); border-radius: 4px; overflow: hidden; appearance: none; background: var(--lab-tint); }
 .record-meter progress::-webkit-progress-bar { background: var(--lab-tint); }
 .record-meter progress::-webkit-progress-value { background: var(--lab-maroon); }
 .record-meter progress::-moz-progress-bar { background: var(--lab-maroon); }

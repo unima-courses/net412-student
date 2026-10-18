@@ -1,6 +1,6 @@
 # Maintenance and lab-pack operations
 
-Student installation and use are in [README.md](README.md). Source architecture, local development and contributions are in [DEVELOPMENT.md](DEVELOPMENT.md). Instructor-server administration and activity authoring are documented in the separate `net412-instructor` repository.
+Student installation is in [README.md](README.md); lab use is in [LAB_GUIDE.md](LAB_GUIDE.md). Source architecture, local development and contributions are in [DEVELOPMENT.md](DEVELOPMENT.md). Instructor-server administration and activity authoring are documented in the separate `net412-instructor` repository.
 
 ## Validation
 
@@ -52,6 +52,6 @@ The exporter includes hidden/nested files, binary data and empty folders. Symlin
 
 ## Documentation upkeep
 
-Keep the README focused on student setup and use, including both Windows and Debian/Ubuntu routes. Recheck upstream installation instructions when changing supported versions; use official Docker, Microsoft, Node.js and Wireshark documentation and the nvm project's own installation instructions. Record the actual verification date.
+Keep the README focused on student setup, including both Windows and Debian/Ubuntu routes. Keep sign-in, terminals, captures, submissions and lab troubleshooting in LAB_GUIDE. Recheck upstream installation instructions when changing supported versions; use official Docker, Microsoft, Node.js and Wireshark documentation and the nvm project's own installation instructions. Record the actual verification date.
 
 Preserve local theme provenance and licenses as described in [DEVELOPMENT.md](DEVELOPMENT.md#theme-and-assets). While the app remains undeployed, activity content stays at **v1** as requested by the course owner; do not create new versions merely for these refinements. Any cleanup of duplicate backend definitions must preserve valid assignments and submissions and be handled in the instructor repository.

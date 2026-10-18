@@ -1,6 +1,6 @@
 # Development and contributions
 
-For student installation and lab use, start with [README.md](README.md). Operational checks and bundle maintenance are in [MAINTAINERS.md](MAINTAINERS.md).
+Student installation is in [README.md](README.md); lab use is in [LAB_GUIDE.md](LAB_GUIDE.md). Operational checks and bundle maintenance are in [MAINTAINERS.md](MAINTAINERS.md).
 
 ## Local development
 
@@ -51,7 +51,7 @@ The interface uses a course-local snapshot of **Teaching theme v1, 7 September 2
 
 ## Contributing changes
 
-Keep student setup and usage in the README; put implementation details here and operational procedures in MAINTAINERS. Edit source files and regenerate affected outputs rather than changing generated browser assets directly. Include corresponding client/backend changes when a pack or API contract changes.
+Keep student setup in the README and lab usage in LAB_GUIDE; put implementation details here and operational procedures in MAINTAINERS. Edit source files and regenerate affected outputs rather than changing generated browser assets directly. Include corresponding client/backend changes when a pack or API contract changes.
 
 Describe the problem, resulting behavior and checks performed when submitting a change through the course team's repository workflow. Do not include real student credentials, personal flags, grading ground truth, captured student traffic or exported work. Use disposable test accounts for integration checks.
 

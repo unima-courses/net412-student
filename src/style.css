@@ -499,3 +499,17 @@ th {
 .work-download { border-left: 3px solid var(--lab-maroon) !important; }
 .work-download code { overflow-wrap: anywhere; }
 @media(max-width: 500px) { .record-heading { align-items: flex-start; flex-direction: column; } }
+
+/* Results include text as well as colour, including both interface themes. */
+.input.answer-correct, .textarea.answer-correct { border: 2px solid #23814b; background: #e7f5ec; color: #143e25; }
+.input.answer-wrong, .textarea.answer-wrong { border: 2px solid #bc3841; background: #fff0f0; color: #70232a; }
+.answer-feedback { display: block; font-size: .9rem; margin-top: .35rem; }
+.activity-card { cursor: pointer; transition: border-color .15s; }
+.activity-card:hover, .activity-card:focus-visible { border-color: var(--color-primary); outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.activity-open { margin-top: .8rem; color: var(--color-primary); }
+fieldset[disabled] input, fieldset[disabled] textarea { opacity: .85; }
+@media (prefers-reduced-motion: reduce) { .activity-card { transition: none; } }
+@media (max-width: 640px) {
+  .navbar { flex-wrap: wrap; }
+  .navbar > .flex-1 { flex-basis: 100%; }
+}

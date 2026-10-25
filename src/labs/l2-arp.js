@@ -26,6 +26,18 @@ export function createArpLab(labDir, _spec, { runDocker = docker } = {}) {
     taskIds: new Set(['l2.a']),
     terminalTargets: containers,
     containerName: name,
+    directory: labDir,
+    async exportTargets() {
+      return (await runDocker([...compose, 'config', '--services'])).split('\n').filter(Boolean);
+    },
+    assertWorkspaceOwner(details) {
+      const owner = details.Config?.Labels?.['com.docker.compose.project.working_dir'];
+      if (!owner || path.resolve(owner) !== path.resolve(labDir)) throw new Error('These containers belong to another activity or student. Export that work from its own activity before switching labs.');
+    },
+    prepareExport: () => guarded(async () => {
+      // Create missing containers without starting or replacing any existing work.
+      await runDocker([...compose, 'create', '--build', '--no-recreate'], 600000);
+    }),
     async status() {
       try {
         const ids = (await runDocker([...compose, 'ps', '--status', 'running', '-q'])).split('\n').filter(Boolean);

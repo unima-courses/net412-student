@@ -33,9 +33,17 @@ Terminal sessions are independent Docker shells. Switching tabs or navigating wi
 
 ## Workspace exports
 
-`src/workspaces.js` streams tar data from each topology container into a temporary ZIP, removed after the download completes. The filename is `studentUsername-task.zip`. Contents are grouped by container name and include hidden files, nested files, binary captures and empty directories. Symbolic links are represented as `.link.txt` files rather than following their targets.
+`src/workspaces.js` copies Docker tar entries into an isolated temporary tree, with one folder per Compose/topology container, and then archives that tree. Temporary files and partial ZIPs are removed on success or failure. Files are streamed to disk; captures are not buffered in server memory. The download name is `<registration-number>_<activity-id>.zip` (unsafe filename characters become hyphens).
 
-The exporter uses the container's Docker `WorkingDir`, falling back to `/work` when unset. Pack authors can supply `environment.work_directories`, mapping topology device names to absolute workspace paths. `/` is never exported. A missing work directory must produce an error rather than silently omitting a container. Downloads require a running lab. Students must save editors and stop captures before exporting.
+Exports work for created, running and stopped containers. When containers do not exist, the pack uses `docker compose create --build --no-recreate` to prepare initial workspaces without running the lab or replacing existing containers. This first preparation needs Docker and any uncached image downloads. The exporter checks the Compose working-directory label before copying to avoid exporting another student's containers. It enumerates all Compose services plus topology devices, including nonterminal devices. It exports `WorkingDir` (fallback `/work`) or `environment.work_directories` overrides; missing directories and `/` fail explicitly. Hidden/nested/binary files and empty directories are retained; links become `.link.txt` records. Save files and stop captures first.
+
+## Activity caching and connectivity
+
+The dashboard prefetches activities sequentially; a click shares any in-flight download. The workbook renders as soon as its verified definition is ready, with container status checked afterwards. Common and personalized bundles are cached on disk by instructor origin, student, activity, version and source digest, then verified when materialized. L2 downloads only its personalized bundle rather than also downloading the common copy. Session caches use the public specification digest so same-version edits and walkthrough releases invalidate them. Catalog metadata refreshes every 30 seconds while the page is visible. Cached workbooks can remain readable through a connection interruption; authentication and grading still require the instructor server.
+
+Concurrent account checks share one request. Read-only local actions reuse a successful account check for up to five seconds; mutations and new terminals revalidate with the server. Thus reset/deactivation may take up to five seconds to reach cached local reads. Account changes, sign-out and server changes clear local session access. Activity-specific requests prevent prefetching another generic Compose pack from changing the current terminal/action target.
+
+Due dates arrive as timezone-aware ISO timestamps. The interface disables submission fields at the deadline and polls for instructor changes. The instructor server independently rejects late submissions, including queued submissions that arrive late. Accepted submissions can be retried idempotently after a deadline without adding another attempt.
 
 ## Topology renderer
 

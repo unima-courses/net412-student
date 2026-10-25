@@ -51,6 +51,6 @@ test('does not silently omit a missing container workspace', async () => {
   } finally { await fs.rm(directory, { recursive: true, force: true }); }
 });
 test('uses the student and task in a safe ZIP filename', () => {
-  assert.equal(workspaceFilename('student42', 'l2.a'), 'student42-l2.a.zip');
-  assert.equal(workspaceFilename('../student\r\n', 'l2/a'), '.._student__-l2_a.zip');
+  assert.equal(workspaceFilename('student42', 'l2.a'), 'student42_l2.a.zip');
+  assert.equal(workspaceFilename('../student\r\n', 'l2/a'), '-student--_l2-a.zip');
 });

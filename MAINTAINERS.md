@@ -46,12 +46,19 @@ Students sign in with their email address as username and registration number as
 
 ## Work export support
 
-**Download work ZIP** exports every topology container's work directory under its container name. The lab must be running. Students should save files and stop captures first, verify the archive, and submit it separately through Google Classroom before resetting.
+**Download work ZIP** exports every topology container's work directory under its container name. The lab may be new, running or stopped; new containers are prepared without starting them. Students should save files and stop captures first, verify the archive, and submit it separately through Google Classroom before resetting.
 
-The exporter includes hidden/nested files, binary data and empty folders. Symlinks become `.link.txt` records. It uses each Docker `WorkingDir` (fallback `/work`) or the authored `environment.work_directories` mapping, rejects `/`, and errors on missing work directories. Temporary ZIPs are deleted after download. See [workspace implementation details](DEVELOPMENT.md#workspace-exports).
+The exporter includes hidden/nested files, binary data and empty folders. Symlinks become `.link.txt` records. It uses each Docker `WorkingDir` (fallback `/work`) or the authored `environment.work_directories` mapping, rejects `/`, and errors on missing work directories. The staged tree and temporary ZIP are deleted after download or failure. See [workspace implementation details](DEVELOPMENT.md#workspace-exports).
 
 ## Documentation upkeep
 
 Keep the README focused on student setup, including both Windows and Debian/Ubuntu routes. Keep sign-in, terminals, captures, submissions and lab troubleshooting in LAB_GUIDE. Recheck upstream installation instructions when changing supported versions; use official Docker, Microsoft, Node.js and Wireshark documentation and the nvm project's own installation instructions. Record the actual verification date.
 
 Preserve local theme provenance and licenses as described in [DEVELOPMENT.md](DEVELOPMENT.md#theme-and-assets). While the app remains undeployed, activity content stays at **v1** as requested by the course owner; do not create new versions merely for these refinements. Any cleanup of duplicate backend definitions must preserve valid assignments and submissions and be handled in the instructor repository.
+
+
+## Portal update checks
+
+`npm test` includes local HTTP integration tests for cached activity loading, retry, revocation, password-reset proxying and actual ZIP responses for one and five simulated containers. `node scripts/docker-export-smoke.mjs` additionally builds disposable one- and five-container Alpine labs and verifies ZIP contents before start, while running and after stopping. It removes only its own test resources; it requires Docker and an existing `alpine:latest` image.
+
+Password reset is available while signed in. Students who cannot sign in should request an instructor reset. No SMTP service is required.

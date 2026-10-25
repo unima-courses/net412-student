@@ -28,6 +28,18 @@ export function createComposeLab(labDir, spec) {
     taskIds: new Set(spec.tasks.map(task => task.id)),
     terminalTargets: targets,
     containerName: target => `${project}-${target}-1`,
+    directory: labDir,
+    async exportTargets() {
+      return (await docker([...compose, 'config', '--services'])).split('\n').filter(Boolean);
+    },
+    assertWorkspaceOwner(details) {
+      const owner = details.Config?.Labels?.['com.docker.compose.project.working_dir'];
+      if (!owner || path.resolve(owner) !== path.resolve(labDir)) throw new Error('These containers belong to another activity or student. Export that work from its own activity before switching labs.');
+    },
+    prepareExport: () => guarded(async () => {
+      // Create missing containers without starting or replacing any existing work.
+      await docker([...compose, 'create', '--build', '--no-recreate'], 600000);
+    }),
     async status() {
       try {
         const running = new Set((await docker([...compose, 'ps', '--status', 'running', '--services'])).split('\n').filter(Boolean));

@@ -49,8 +49,8 @@ The **Automation record** shows question completion, marks, accepted/retry/unans
 For the separate Google Classroom submission:
 
 1. Save any files open in container editors and stop captures with **Ctrl+C**.
-2. Keep the lab running and click **Download work ZIP**.
-3. Save `studentUsername-task.zip`, for example `student@example.edu-l2.a.zip`. Files are grouped by container name, such as `host_a/`, `host_b/` and `server_1/`; the ZIP includes all topology containers' work directories.
+2. Click **Download work ZIP**. The lab can be new, running or stopped.
+3. Save `registration-number_activity-id.zip`, for example `bsc-10-10_l2-arp.zip`. Files are grouped by container name, such as `host_a/`, `host_b/` and `server_1/`; the ZIP includes all topology containers' work directories.
 4. Open the ZIP to confirm your expected scripts and captures are present. Keep a backup on your computer.
 5. Upload this ZIP to the Google Classroom assignment specified by your instructor. The client does **not** upload it for you.
 
@@ -63,8 +63,21 @@ For the separate Google Classroom submission:
 | Sign-in, terminal access or submission fails | Check the instructor URL and server/network availability. After an instructor password reset, sign in with your registration number and change it. |
 | Network creation reports “Pool overlaps” | Save any existing work. Another lab or Docker network may use the same subnet. Report the full error to your instructor; avoid deleting unrelated networks or running a global Docker prune. |
 | PCAP download is missing or incomplete | Start the capture yourself, use the workbook's output path, generate traffic, then stop tcpdump before downloading. |
-| ZIP download fails | Keep the current lab running, save files and stop captures, then retry. Include the error and container name when reporting it. |
+| ZIP download fails | Check Docker is available, save files and stop captures, then retry. First-time preparation may need an image download. Include the error and container name when reporting it. |
 
 For Docker, Node.js, Wireshark installation or local client startup problems, see [setup troubleshooting](README.md#setup-troubleshooting).
 
 When asking for help, include your OS, activity name, the full error message and the step you were performing. Never send your password or personal flag.
+
+
+## Password reset, deadlines and saved answers
+
+While signed in, **Reset password** resets your own password to the default and signs you out. Sign in again with the default you already know, then choose a new password. If you cannot sign in, ask your instructor to reset your password.
+
+An activity's due date appears on its card and answer form. After the deadline, answer inputs and submission are disabled. You can still read the workbook, use the local lab and download your work. A queued submission must reach the server before the deadline to be accepted.
+
+Saved answers reappear in their fields: green with **Correct · saved**, or red with **Incorrect · saved; try again**. Editing a saved value changes its feedback to **Edited · not submitted** until you submit again. Accepted answers keep their credit across attempts.
+
+Select anywhere on an activity card to open it. Definitions download in the background and are cached; **Opening activity…** and **Checking local containers…** distinguish preparation from lab status. Interrupted downloads can be retried by selecting the card again.
+
+**Download work ZIP** includes every container's workspace in its own folder and names the archive `<registration-number>_<activity-id>.zip`, for example `bsc-10-10_lab2.zip`. It works before you start, while running and after stopping. First-time preparation can take longer because Docker may need to build the containers. Save files and stop captures before exporting. Resetting removes container-local work, so export before resetting.

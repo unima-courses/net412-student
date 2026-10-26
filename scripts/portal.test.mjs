@@ -9,13 +9,16 @@ import { unzipSync, strFromU8 } from 'fflate';
 import { startServer } from '../src/server.js';
 import { computeBundleDigest } from '../src/bundles.js';
 
-async function fixture(t, count = 5) {
+async function fixture(t, count = 5, personalized = false) {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'net412-portal-test-'));
   t.after(() => fs.rm(dataDir, { recursive: true, force: true }));
   const targets = Array.from({length:count}, (_, i) => `host_${i}`);
   const bundle = { activity_id:'lab2', version:1, files:{'Dockerfile':'FROM scratch\n','compose.yaml':'services: {}\n'} };
   bundle.digest = computeBundleDigest(bundle);
   const spec = { id:'lab2', version:1, title:'Test', tasks:[{id:'task.a'}], topology:{devices:targets.map(name => ({name}))}, environment:{client_pack:'compose',terminal_targets:targets,bundle:{digest:bundle.digest}} };
+  if (personalized) spec.environment.personalization = {task_id:'task.a'};
+  const personalBundle = {...bundle, files:{...bundle.files, 'fragment.txt':'synthetic personalized content'}};
+  personalBundle.digest = computeBundleDigest(personalBundle);
   const calls = {};
   let released = true, revision = 'v1', revoked = false, available = false, prepared = 0, failBundle = false;
   const remote = createServer(async (req, res) => {
@@ -28,6 +31,7 @@ async function fixture(t, count = 5) {
     else if (req.url.endsWith('/password/reset/')) { revoked = true; result = {ok:true,message:'Password reset'}; }
     else if (req.url.endsWith('/activities/')) result = {activities:released ? [{id:'lab2', spec_digest:revision, bundle_digest:bundle.digest}] : []};
     else if (req.url.endsWith('/lab2/')) result = {...spec, title:revision};
+    else if (req.url.endsWith('/initialize/')) result = personalBundle;
     else if (req.url.endsWith('/bundle/')) { if (failBundle) { res.statusCode = 503; result = {error:'Try again'}; } else result = bundle; }
     res.setHeader('Content-Type','application/json'); res.end(JSON.stringify(result));
   });
@@ -90,6 +94,15 @@ test('failed downloads can be retried and are not cached as successful', async t
   const f=await fixture(t); f.fail();
   assert.equal((await f.request('activities/lab2')).status,503);
   f.recover(); assert.equal((await f.request('activities/lab2')).status,200);
+});
+
+test('personalized Compose uses initialization and verifies its distinct bundle digest', async t => {
+  const f = await fixture(t, 4, true);
+  assert.equal((await f.request('activities/lab2')).status, 200);
+  assert.equal(f.calls['/api/v1/activities/lab2/initialize/'], 1);
+  assert.equal(f.calls['/api/v1/activities/lab2/bundle/'], undefined);
+  assert.equal((await f.request('activities/lab2')).status, 200);
+  assert.equal(f.calls['/api/v1/activities/lab2/initialize/'], 1);
 });
 
 test('password reset signs out local session; email recovery is unavailable', async t => {

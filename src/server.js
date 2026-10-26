@@ -163,18 +163,20 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
     if (cached && cached.catalog_digest === item.spec_digest && item.spec_digest) return cached;
     const spec = await remote(`activities/${encodeURIComponent(id)}/`, current.token);
     const packId = spec.environment?.client_pack;
+    const personalizationTask = spec.environment?.personalization?.task_id || (packId === 'l2-arp' ? 'l2.a' : null);
+    const personalized = Boolean(personalizationTask);
     const factory = packFactories.get(packId);
     if (!factory) throw Object.assign(new Error(`This client does not support lab pack ${packId || '(missing)'}`), { status: 409 });
-    const cacheKey = createHash('sha256').update(`${config.serverUrl}\0${current.username}\0${spec.id}\0${spec.version}\0${spec.environment.bundle.digest}`).digest('hex');
+    const cacheKey = createHash('sha256').update(`${config.serverUrl}\0${current.username}\0${spec.id}\0${spec.version}\0${spec.environment.bundle.digest}\0${personalizationTask || 'common'}`).digest('hex');
     const bundleCache = path.join(dataDir, 'bundle-cache');
     const cacheFile = path.join(bundleCache, cacheKey + '.json');
     let bundle = await fs.readFile(cacheFile, 'utf8').then(JSON.parse).catch(() => null);
     if (!bundle) {
-      bundle = packId === 'l2-arp'
+      bundle = personalized
         ? await remote(`activities/${encodeURIComponent(id)}/initialize/`, current.token, 'POST', {})
         : await remote(`activities/${encodeURIComponent(id)}/bundle/`, current.token);
     }
-    if (bundle.activity_id !== spec.id || bundle.version !== spec.version || (packId !== 'l2-arp' && bundle.digest !== spec.environment.bundle.digest)) {
+    if (bundle.activity_id !== spec.id || bundle.version !== spec.version || (!personalized && bundle.digest !== spec.environment.bundle.digest)) {
       throw Object.assign(new Error('Instructor server returned mismatched activity and lab bundle versions'), { status: 502 });
     }
     let installed;
@@ -264,12 +266,18 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
     if (lab && lab.id !== req.params.pack) return res.status(404).json({ error: 'Lab pack mismatch' });
     if (!lab?.exportPcap) return res.status(404).json({ error: 'PCAP unavailable' });
     if (!req.labSession.allowedPacks.has(lab.id)) return res.status(403).json({ error: 'Open the published activity first' });
-    const target = path.join(dataDir, `arp-${randomUUID()}.pcap`);
+    const target = path.join(dataDir, `capture-${randomUUID()}.pcap`);
     try {
+      const captureContainer = lab.captureTarget;
+      if (captureContainer && lab.assertWorkspaceOwner) {
+        lab.assertWorkspaceOwner(await docker.getContainer(lab.containerName(captureContainer)).inspect());
+      }
       await lab.exportPcap(target);
       const capture = await fs.readFile(target);
       res.setHeader('Content-Type', 'application/vnd.tcpdump.pcap');
-      res.setHeader('Content-Disposition', 'attachment; filename="net412-l2-arp.pcap"');
+      const activityId = [...req.labSession.activityPacks].find(([, value]) => value === lab)?.[0] || lab.id;
+      const filename = `net412-${activityId.replace(/[^a-zA-Z0-9_-]/g, '-')}.pcap`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Length', capture.length);
       res.send(capture);
     } finally {

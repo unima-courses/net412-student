@@ -193,20 +193,23 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
     spec.catalog_digest = item.spec_digest;
     return spec;
   }
+  async function ensureActivity(current, id) {
+    if (!current.loading.has(id)) current.loading.set(id, loadActivity(current, id).finally(() => current.loading.delete(id)));
+    return current.loading.get(id);
+  }
   app.get('/api/activities', auth, wrap(async (req, res) => res.json(await catalog(req.labSession, true))));
   app.get('/api/activities/:id', auth, wrap(async (req, res) => {
     const current = req.labSession;
-    const id = req.params.id;
-    if (!current.loading.has(id)) current.loading.set(id, loadActivity(current, id).finally(() => current.loading.delete(id)));
-    const spec = await current.loading.get(id);
+    const spec = await ensureActivity(current, req.params.id);
     // A cached generic pack must become the selected pack again on reopening.
-    current.packs.set(spec.environment.client_pack, current.activityPacks.get(id));
+    current.packs.set(spec.environment.client_pack, current.activityPacks.get(spec.id));
     res.json(spec);
   }));
   app.get('/api/activities/:id/work.zip', auth, wrap(async (req, res) => {
-    const lab = req.labSession.activityPacks.get(req.params.id);
-    const spec = req.labSession.activitySpecs.get(req.params.id);
-    if (!lab || !spec) return res.status(404).json({ error: 'Open an assigned activity and select a valid task first' });
+    // The browser may still show a cached workbook after its session changes.
+    // Resolve the assigned activity here, sharing any in-flight open/download.
+    const spec = await ensureActivity(req.labSession, req.params.id);
+    const lab = req.labSession.activityPacks.get(spec.id);
     const devices = Array.isArray(spec.topology) ? spec.topology : spec.topology?.devices;
     const targets = [...new Set([...(devices?.map(device => device.name) || []), ...(lab.exportTargets ? await lab.exportTargets() : lab.terminalTargets)])];
     let missing = false;
@@ -220,7 +223,9 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
     try {
       await exportWorkspaces({ docker, lab, targets, destination: target, directories: spec.environment.work_directories || {} });
       res.setHeader('Cache-Control', 'no-store');
-      await new Promise((resolve, reject) => res.download(target, workspaceFilename(req.labSession.regNumber, spec.id), error => error ? reject(error) : resolve()));
+      // Limit serving to this export directory. Its parent (~/.net412-lab) is
+      // hidden, so passing the absolute path triggers Express's dotfile 404.
+      await new Promise((resolve, reject) => res.download('work.zip', workspaceFilename(req.labSession.regNumber, spec.id), { root: temporary }, error => error ? reject(error) : resolve()));
     } finally { await fs.rm(temporary, { recursive: true, force: true }); }
   }));
   app.get('/api/progress', auth, wrap(async (req, res) => res.json(await remote('progress/', req.labSession.token))));

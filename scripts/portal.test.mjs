@@ -9,9 +9,11 @@ import { unzipSync, strFromU8 } from 'fflate';
 import { startServer } from '../src/server.js';
 import { computeBundleDigest } from '../src/bundles.js';
 
-async function fixture(t, count = 5, personalized = false) {
-  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'net412-portal-test-'));
-  t.after(() => fs.rm(dataDir, { recursive: true, force: true }));
+async function fixture(t, count = 5, personalized = false, hiddenDataDir = false) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'net412-portal-test-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const dataDir = hiddenDataDir ? path.join(root, '.net412-lab') : root;
+  await fs.mkdir(dataDir, { recursive: true });
   const targets = Array.from({length:count}, (_, i) => `host_${i}`);
   const bundle = { activity_id:'lab2', version:1, files:{'Dockerfile':'FROM scratch\n','compose.yaml':'services: {}\n'} };
   bundle.digest = computeBundleDigest(bundle);
@@ -73,6 +75,32 @@ test('ZIP endpoint works before start and for stopped labs with arbitrary contai
     for (let i=0;i<50 && (await fs.readdir(f.dataDir)).some(n=>n.startsWith('work-export-'));i++) await new Promise(resolve=>setTimeout(resolve,10));
     assert.equal((await fs.readdir(f.dataDir)).filter(n=>n.startsWith('work-export-')).length,0);
   });
+});
+
+test('ZIP download serves the archive from the hidden default client data directory', async t => {
+  const f = await fixture(t, 4, true, true);
+  assert.equal((await f.request('activities/lab2')).status, 200);
+  const response = await f.request('activities/lab2/work.zip?task=task.a');
+  assert.equal(response.status, 200, response.ok ? undefined : await response.text());
+  assert.match(response.headers.get('content-type'), /application\/zip/);
+  const files = unzipSync(new Uint8Array(await response.arrayBuffer()));
+  for (let i = 0; i < 4; i++) assert.equal(strFromU8(files[`host_${i}/.hidden`]), 'saved');
+});
+
+test('ZIP download loads a personalized activity in a fresh session without opening it first', async t => {
+  const f = await fixture(t, 4, true);
+  const response = await f.request('activities/lab2/work.zip?task=task.a');
+  assert.equal(response.status, 200, response.ok ? undefined : await response.text());
+  assert.match(response.headers.get('content-disposition'), /bsc-10-10_lab2.zip/);
+  const files = unzipSync(new Uint8Array(await response.arrayBuffer()));
+  for (let i = 0; i < 4; i++) assert.equal(strFromU8(files[`host_${i}/.hidden`]), 'saved');
+  assert.equal(f.calls['/api/v1/activities/lab2/initialize/'], 1);
+  assert.equal(f.prepared, 1);
+
+  f.unassign();
+  await f.request('activities');
+  assert.equal((await f.request('activities/lab2/work.zip?task=task.a')).status, 404);
+  assert.equal(f.prepared, 1);
 });
 
 test('concurrent opens coalesce downloads, cached reopen avoids transfers, revision refreshes spec', async t => {

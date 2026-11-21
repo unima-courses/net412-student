@@ -12,6 +12,8 @@ export function createComposeLab(labDir, spec, { runDocker = docker } = {}) {
   const project = spec.environment.compose_project || `net412-${activityId}`;
   const targets = new Set(spec.environment.terminal_targets || []);
   const capture = spec.environment.capture;
+  const requestSource = spec.environment.http_request?.source;
+  if (requestSource && (!/^[a-z0-9][a-z0-9_-]{0,62}$/.test(requestSource) || !spec.topology?.devices?.some(d => d.name === requestSource))) throw new Error('Invalid HTTP request source');
   if (capture && (!targets.has(capture.target) || typeof capture.path !== 'string' ||
       !/^\/work\/(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*[A-Za-z0-9_-][A-Za-z0-9._-]*\.pcap$/.test(capture.path))) {
     throw new Error('Capture must name a terminal target and a .pcap file under /work');
@@ -29,7 +31,7 @@ export function createComposeLab(labDir, spec, { runDocker = docker } = {}) {
   }
   return {
     id: 'compose',
-    actions: new Set(['start', 'reset']),
+    actions: new Set(['start', 'reset', ...(requestSource ? ['send-request'] : [])]),
     taskIds: new Set(spec.tasks.map(task => task.id)),
     terminalTargets: targets,
     terminalSessionLimit: Number.isInteger(spec.environment.terminal_session_limit) && spec.environment.terminal_session_limit > 0 ? spec.environment.terminal_session_limit : Infinity,
@@ -46,6 +48,13 @@ export function createComposeLab(labDir, spec, { runDocker = docker } = {}) {
           throw Object.assign(new Error('No valid PCAP is available. Start tcpdump in a terminal, generate traffic, then stop it with Ctrl+C before downloading.'), { status: 409 });
         }
       },
+    } : {}),
+    ...(requestSource ? {
+      'send-request': () => guarded(async () => {
+        try { await runDocker(['exec', `${project}-${requestSource}-1`, 'python', '/opt/lab/request.py'], 15000); }
+        catch { throw Object.assign(new Error('Request failed. Check that the lab is running and try again.'), {status:409}); }
+        return {message:'Request sent'};
+      }),
     } : {}),
     async exportTargets() {
       return (await runDocker([...compose, 'config', '--services'])).split('\n').filter(Boolean);

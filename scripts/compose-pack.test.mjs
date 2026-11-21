@@ -52,3 +52,17 @@ test('running containers from another bundle are not treated as this lab', async
     args[0] === 'inspect' ? '/tmp/other-student\n/tmp/other-student' : 'student\nservice'});
   assert.equal((await lab.status()).running, false);
 });
+
+
+test('HTTP button invokes only the fixed source request and returns no packet contents', async () => {
+  const calls = [];
+  const configured = {...spec, topology:{devices:[{name:'host_a'},{name:'host_b'}]}, environment:{...spec.environment, terminal_targets:['host_b'],http_request:{source:'host_a'}}};
+  const lab = createComposeLab('/tmp/request-lab', configured, {runDocker:async args => {calls.push(args); return 'secret response flag';}});
+  assert.equal(lab.terminalTargets.has('host_a'),false);
+  assert.deepEqual(await lab['send-request'](),{message:'Request sent'});
+  assert.deepEqual(calls,[['exec','net412-shell-host_a-1','python','/opt/lab/request.py']]);
+  assert.equal(createComposeLab('/tmp/example',spec).actions.has('send-request'),false);
+  const failed = createComposeLab('/tmp/request-lab', configured, {runDocker:async () => {throw new Error('private packet output');}});
+  await assert.rejects(failed['send-request'](), e => e.status===409 && !e.message.includes('private'));
+  assert.throws(() => createComposeLab('/tmp/request-lab', {...configured,environment:{...configured.environment,http_request:{source:'../host'}}}), /Invalid HTTP/);
+});

@@ -22,6 +22,7 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
   const config = await fs.readFile(configPath, 'utf8').then(JSON.parse).catch(() => ({ serverUrl: process.env.NET412_INSTRUCTOR_URL || 'http://127.0.0.1:8000' }));
   const state = await fs.readFile(statePath, 'utf8').then(JSON.parse).catch(() => ({ drafts: {}, pending: [] }));
   const sessions = new Map();
+  const terminalCounts = new Map();
   const packFactories = factories || new Map([['compose', createComposeLab], ['l2-arp', createArpLab]]);
   const app = express();
   app.disable('x-powered-by');
@@ -343,6 +344,21 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
     if (origin !== `http://127.0.0.1:${server.address().port}` || url.pathname !== '/terminal' || !passwordReady || lab?.id !== url.searchParams.get('pack') || !clientSession?.allowedPacks.has(lab?.id) || !lab?.terminalTargets.has(target)) {
       socket.write('HTTP/1.1 403 Forbidden\r\n\r\n'); socket.destroy(); return;
     }
+    const terminalKey = JSON.stringify([clientSession.username, lab.directory, lab.id]);
+    const count = terminalCounts.get(terminalKey) || 0;
+    if (count >= (lab.terminalSessionLimit ?? Infinity)) {
+      socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n'); socket.destroy(); return;
+    }
+    terminalCounts.set(terminalKey, count + 1);
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      const remaining = (terminalCounts.get(terminalKey) || 1) - 1;
+      if (remaining) terminalCounts.set(terminalKey, remaining);
+      else terminalCounts.delete(terminalKey);
+    };
+    socket.once('close', release);
     try {
       const execution = await docker.getContainer(lab.containerName(target)).exec({
         Cmd: ['/bin/sh'], Env: ['TERM=xterm-256color', 'COLORTERM=truecolor', 'LANG=C.UTF-8'],
@@ -350,6 +366,7 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
         ConsoleSize: [rows, cols]
       });
       const stream = await execution.start({ hijack: true, stdin: true, Tty: true });
+      if (socket.destroyed) { stream.destroy(); release(); return; }
       await execution.resize({ h: rows, w: cols });
       wss.handleUpgrade(request, socket, head, ws => {
         stream.on('data', chunk => { if (ws.readyState === 1) ws.send(chunk, { binary: true }); });
@@ -366,9 +383,9 @@ export async function startServer({ dataDir = process.env.NET412_DATA_DIR || pat
             } catch { /* ignore invalid resize */ }
           } else stream.write(raw);
         });
-        ws.on('close', () => stream.end());
+        ws.on('close', () => { release(); stream.end(); });
       });
-    } catch { socket.write('HTTP/1.1 503 Service Unavailable\r\n\r\n'); socket.destroy(); }
+    } catch { release(); socket.write('HTTP/1.1 503 Service Unavailable\r\n\r\n'); socket.destroy(); }
   });
   return server;
 }

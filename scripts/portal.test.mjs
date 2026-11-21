@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import WebSocket from 'ws';
+import { PassThrough } from 'node:stream';
 import test from 'node:test';
 import { createServer } from 'node:http';
 import fs from 'node:fs/promises';
@@ -9,7 +11,7 @@ import { unzipSync, strFromU8 } from 'fflate';
 import { startServer } from '../src/server.js';
 import { computeBundleDigest } from '../src/bundles.js';
 
-async function fixture(t, count = 5, personalized = false, hiddenDataDir = false) {
+async function fixture(t, count = 5, personalized = false, hiddenDataDir = false, terminals = false) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'net412-portal-test-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const dataDir = hiddenDataDir ? path.join(root, '.net412-lab') : root;
@@ -41,10 +43,11 @@ async function fixture(t, count = 5, personalized = false, hiddenDataDir = false
   t.after(() => new Promise(resolve => remote.close(resolve)));
   await fs.writeFile(path.join(dataDir,'config.json'), JSON.stringify({serverUrl:`http://127.0.0.1:${remote.address().port}`}));
   const docker = {getContainer: name => ({
+    exec: async () => ({start: async () => new PassThrough(), resize: async () => {}}),
     inspect:async () => { if (!available) throw Object.assign(new Error('Missing'), {statusCode:404}); return {Config:{WorkingDir:'/work'}}; },
     getArchive:async () => { const p = tar.pack(); p.entry({name:'.',type:'directory'}); p.entry({name:'.hidden'}, 'saved'); p.entry({name:'nested',type:'directory'}); p.entry({name:'nested/result.bin'}, Buffer.from([0,255,1])); p.entry({name:'empty',type:'directory'}); p.finalize(); return p; }
   })};
-  const factory = () => ({id:'compose',taskIds:new Set(['task.a']),terminalTargets:new Set(targets),containerName:n=>n,exportTargets:async()=>targets,prepareExport:async()=>{prepared++;available=true;},status:async()=>({running:false})});
+  const factory = () => ({id:'compose',directory:dataDir,terminalSessionLimit:terminals ? 5 : Infinity,taskIds:new Set(['task.a']),terminalTargets:new Set(targets),containerName:n=>n,exportTargets:async()=>targets,prepareExport:async()=>{prepared++;available=true;},status:async()=>({running:false})});
   const server = await startServer({dataDir, docker, factories:new Map([['compose',factory]])});
   t.after(() => new Promise(resolve => server.close(resolve)));
   let cookie='';
@@ -53,7 +56,7 @@ async function fixture(t, count = 5, personalized = false, hiddenDataDir = false
   }
   const login = await request('login',{username:'student@example.edu',password:'test'});
   cookie = login.headers.get('set-cookie').split(';')[0];
-  return {request,calls,dataDir,get prepared(){return prepared;},change:()=>{revision='v2';},unassign:()=>{released=false;},fail:()=>{failBundle=true;},recover:()=>{failBundle=false;}};
+  return {request,calls,dataDir,terminalUrl:`ws://127.0.0.1:${server.address().port}/terminal`,cookie,origin:`http://127.0.0.1:${server.address().port}`,get prepared(){return prepared;},change:()=>{revision='v2';},unassign:()=>{released=false;},fail:()=>{failBundle=true;},recover:()=>{failBundle=false;}};
 }
 
 test('ZIP endpoint works before start and for stopped labs with arbitrary container counts', async t => {
@@ -138,4 +141,26 @@ test('password reset signs out local session; email recovery is unavailable', as
   assert.equal((await f.request('password/reset',{})).status,200);
   assert.equal((await f.request('me')).status,401);
   assert.equal((await f.request('password/recover',{email:'student@example.edu'})).status,404);
+});
+
+
+test('terminal allowlist and five-session quota are enforced on WebSocket connections', async t => {
+  const f = await fixture(t, 1, false, false, true);
+  await f.request('activities/lab2');
+  const opened = [];
+  t.after(() => opened.forEach(ws => ws.terminate()));
+  const connect = (target = 'host_0', activity = true) => new Promise((resolve, reject) => {
+    const ws = new WebSocket(`${f.terminalUrl}?pack=compose&target=${target}${activity ? '&activity=lab2' : ''}`, {origin:f.origin, headers:{cookie:f.cookie}});
+    ws.once('open', () => { opened.push(ws); resolve(ws); });
+    ws.once('unexpected-response', (_, response) => { response.resume(); ws.terminate(); resolve(response.statusCode); });
+    ws.on('error', () => {});
+  });
+  for (const target of ['host_a','router','server_1']) assert.equal(await connect(target),403);
+  const sockets = await Promise.all(Array.from({length:5}, () => connect()));
+  assert.ok(sockets.every(ws => ws instanceof WebSocket));
+  assert.equal(await connect(),429);
+  assert.equal(await connect('host_0',false),429);
+  await new Promise(resolve => { sockets[0].once('close',resolve); sockets[0].close(); });
+  assert.ok(await connect() instanceof WebSocket);
+  await Promise.all(opened.filter(ws => ws.readyState === WebSocket.OPEN).map(ws => new Promise(resolve => {ws.once('close',resolve); ws.close();})));
 });

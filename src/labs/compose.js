@@ -32,6 +32,7 @@ export function createComposeLab(labDir, spec, { runDocker = docker } = {}) {
     actions: new Set(['start', 'reset']),
     taskIds: new Set(spec.tasks.map(task => task.id)),
     terminalTargets: targets,
+    terminalSessionLimit: Number.isInteger(spec.environment.terminal_session_limit) && spec.environment.terminal_session_limit > 0 ? spec.environment.terminal_session_limit : Infinity,
     containerName: target => `${project}-${target}-1`,
     directory: labDir,
     captureTarget: capture?.target,

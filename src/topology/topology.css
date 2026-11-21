@@ -54,3 +54,9 @@
 
 .topology-scroll-hint{font-size:.7rem;color:var(--lab-muted);margin:0 0 .65rem}
 @container(max-width:380px){.topology-scroll-hint{display:none}}
+
+.topology-canvas{width:100%;min-width:0}
+.topology-graph{display:block;width:100%;height:auto;max-height:430px;color:var(--lab-ink)}
+.activity-overview .topology-diagram{margin-top:.35rem;padding:.75rem}
+.activity-overview .topology-diagram figcaption{margin-bottom:.35rem}
+.activity-overview .card-body{gap:.55rem}
